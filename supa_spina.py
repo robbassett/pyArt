@@ -6,6 +6,7 @@ import glob
 import os
 
 from art_objs import *
+from color_tools import *
 from iseeall import draw_eye
 
 class SpinBoi(SinuCirc):
@@ -21,18 +22,6 @@ class SpinBoi(SinuCirc):
         ax.plot(self.x1+xoff,self.y1+yoff,'-',c=c2,lw=4)
         ax.plot(self.x1+xoff,((-1.)*self.y1)+yoff,'-',c=c2,lw=4)
         ax.plot(self.x+xoff,((-1.)*self.yi)+yoff,'-',c=c2,lw=2.)
-
-    def Check(self,th,nsp):
-
-        F  = plt.figure()
-        ax = F.add_subplot(111)
-        for i in range(nsp):
-            self.Spin(i*th)
-            ax.plot(self.x,self.y,'k-',lw=2,alpha=1./float(nsp))
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_aspect('equal')
-        plt.show()
 
 if __name__ == '__main__':
 

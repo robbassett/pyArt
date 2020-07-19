@@ -1,18 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import imageio
-
-def colorFader(c1,c2,mix=0): 
-    c1=np.array(mpl.colors.to_rgb(c1))
-    c2=np.array(mpl.colors.to_rgb(c2))
-    return mpl.colors.to_hex((1-mix)*c1 + mix*c2)
-
-def sinuswitchcolor(length,periods,c1,c2):
-    clt = np.linspace(0,2.*periods*np.pi,length)
-    clt = (((-1.)*np.cos(clt))/2.)+0.5
-    
-    return [colorFader(c1,c2,_c) for _c in clt]
 
 class SinuCirc(object):
 
@@ -38,23 +24,7 @@ class SinuCirc(object):
         self.y = np.sum(xy.T*rmat[1],axis=1)
           
 
-    def Display(self,ax,xoff=0.,yoff=0.,alph=0.5,c1='k',c2='r',c3='w'):
 
-        ax.fill_between(self.x1+xoff,self.y1+yoff,((-1.)*self.y1)+yoff,color=c3)
-        ax.plot(self.x+xoff,self.y+yoff,'-',c=c1,lw=1,alpha=alph)
-        ax.plot(self.x+xoff,((-1.)*self.y)+yoff,'-',c=c1,lw=1,alpha=alph)
-        ax.plot(self.x1+xoff,self.y1+yoff,'-',c=c2,lw=4)
-        ax.plot(self.x1+xoff,((-1.)*self.y1)+yoff,'-',c=c2,lw=4)
-        ax.plot(self.x+xoff,((-1.)*self.yi)+yoff,'-',c=c2,lw=2.)
 
-    def Check(self,th,nsp):
 
-        F  = plt.figure()
-        ax = F.add_subplot(111)
-        for i in range(nsp):
-            self.Spin(i*th)
-            ax.plot(self.x,self.y,'k-',lw=2,alpha=1./float(nsp))
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_aspect('equal')
-        plt.show()
+        

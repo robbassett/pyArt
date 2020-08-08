@@ -4,6 +4,7 @@ import matplotlib as mpl
 import imageio
 import glob
 import os
+from PIL import Image
 
 from art_objs import *
 from color_tools import *
@@ -72,7 +73,7 @@ class NewFlower(object):
         ty.append(ty[0])
         self.values[f'layer{self.layer}']['cents'] = np.vstack((tx,ty))
 
-    def tmp(self,ax,c='k',minlw=1,maxlw=6,ilo=0.1,ihi=25.):
+    def tmp(self,ax,c='k',minlw=1,maxlw=6,ilo=0.1,ihi=25.,palette=[0]):
 
         lfct = ilo/ihi
         hfct = ihi/ilo
@@ -82,7 +83,10 @@ class NewFlower(object):
         for i,k in enumerate(ks):
             tmlw = lws[i]
             tmd = self.values[k]['coords']
-            tmc = np.random.choice(['crimson','orange','gold','darkgreen','dodgerblue','violet'])
+            if len(palette) == 1:
+                tmc = np.random.choice(['crimson','orange','gold','darkgreen','dodgerblue','violet'])
+            else:
+                tmc = palette[np.random.randint(0,palette.shape[0])]
             if k == 'layer0':
                 ax.plot(tmd[0],tmd[1],'-',c=tmc,lw=tmlw,alpha=.1)
                 ax.plot(tmd[0]*lfct,tmd[1]*lfct,'-',c=tmc,lw=tmlw,alpha=.1)
@@ -169,7 +173,20 @@ for i in range(50):
     images.append(imageio.imread('tmp.png'))
 imageio.mimsave('test.gif', images)
 """
-d=NewFlower(N=13)
+pim = np.asarray(Image.open('tmp/pastel.png'))
+if pim.shape[2] == 4:
+    bt = np.zeros((pim.shape[0],pim.shape[1],3))
+    bt[:,:,:] = pim[:,:,:-1]
+pim = np.copy(bt)
+
+insh = pim.reshape((pim.shape[0]*pim.shape[1],3))
+tst  = KmeansPalette(insh,K=16,xin=pim.shape[0],yin=pim.shape[1])
+for i in range(20):
+    tst.assign_points()
+    tst.move_centroids()
+palette = tst.centroids/255.
+                        
+d=NewFlower(N=17)
 for i in range(23):
     d.add_layer()
 
@@ -177,7 +194,7 @@ for i in range(23):
 F=plt.figure(figsize=(5,5),dpi=100)
 ax=F.add_subplot(111)
 lo,hi = .05,d.hi
-d.tmp(ax,minlw=2,maxlw=4,ilo=lo,ihi=hi)
+d.tmp(ax,minlw=2,maxlw=4,ilo=lo,ihi=hi,palette=palette)
 ax.set_aspect('equal')
 ax.set_xticks([])
 ax.set_yticks([])
@@ -186,13 +203,6 @@ lms = np.linspace(np.log10(lo),np.log10(hi),nframe)
 lms = 10.**(lms)
 sml = np.flip(lms)
 images=[]
-"""
-for i in range(nframe):
-    ax.set_xlim((-1.)*lms[i],lms[i])
-    ax.set_ylim((-1.)*lms[i],lms[i])
-    plt.savefig('./frame.png')
-    images.append(imageio.imread('./frame.png'))
-"""
 for i in range(nframe-1):
     ax.set_xlim((-1.)*sml[i],sml[i])
     ax.set_ylim((-1.)*sml[i],sml[i])

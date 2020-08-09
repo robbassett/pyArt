@@ -2,11 +2,18 @@ import numpy as np
 import matplotlib as mpl
 import imageio
 from PIL import Image
+import matplotlib.pyplot as plt
 
 class KmeansPalette(object):
 
-    def __init__(self,X,K=16,xin=128,yin=128):
-        # Initiate half the colors to off-black, half to off-white
+    def __init__(self,pin,K=16,xin=128,yin=128):
+        pim = np.asarray(Image.open(pin))
+        if pim.shape[2] == 4:
+            bt = np.zeros((pim.shape[0],pim.shape[1],3))
+            bt[:,:,:] = pim[:,:,:-1]
+        pim = np.copy(bt)
+        X = insh = pim.reshape((pim.shape[0]*pim.shape[1],3))
+        
         vals = np.random.uniform(0,255,int(K))
         self.centroids = np.copy(vals)
         for i in range(2): self.centroids=np.vstack((self.centroids,np.random.uniform(0,255,int(K))))
@@ -48,10 +55,22 @@ class KmeansPalette(object):
         imout = Image.fromarray(imout)
         imout.save(f'./{fnm}.png')
 
-    def output_palette(self):
+    def output_palette(self,iters=20):
+        for i in range(iters):
+            self.assign_points()
+            self.move_centroids()
+        return self.centroids/255.
+
+    def display_palette(self):
+        x = np.linspace(0,self.K,self.K)
+        y = x*0.
+        cs = []
+        for i in range(len(x)):
+           cs.append(mpl.colors.to_hex(self.centroids[i]/255.))
         
         F = plt.figure()
         ax = F.add_subplot(111)
+        ax.scatter(x,y,s=self.K*100,c=cs)
         plt.show()
 
         
@@ -66,3 +85,10 @@ def sinuswitchcolor(length,periods,c1,c2):
     
     return [colorFader(c1,c2,_c) for _c in clt]
 
+def sinuflashcolor(length,periods,c1,c2,frate=10):
+    clt = np.linspace(0,2.*periods*np.pi,length)
+    clt = (((-1.)*np.cos(clt))/2.)+0.5
+    clt = np.exp(frate*clt)
+    clt/= np.max(clt)
+        
+    return [colorFader(c1,c2,_c) for _c in clt]

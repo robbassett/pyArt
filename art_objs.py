@@ -157,5 +157,144 @@ class PowerElower(object):
         ty.append(ty[0])
         self.values[f'layer{self.layer}']['cents'] = np.vstack((tx,ty))
 
-    
+class SpinZoomer():
+
+    def __init__(self,N=5,ang=15.*(np.pi/180.)):
+        self.sides = 5
+        self.bangs = np.linspace(0,np.pi*2.,N+1)
+
+        self.x = np.cos(self.bangs)
+        self.y = np.sin(self.bangs)
+        self.n = 0.
+
+    def add_one(self,frac=.1):
+
+        self.n += 1.
+        angp  = frac*(self.bangs[1]-self.bangs[0])*self.n
+        tmang = self.bangs+angp
+        if self.n == 1:
+            x1,x2 = self.x[0],self.x[1]
+            y1,y2 = self.y[0],self.y[1]
+        else:
+            tx,ty = self.x[int(self.n)-1],self.y[int(self.n)-1]
+            x1,x2 = tx[0],tx[1]
+            y1,y2 = ty[0],ty[1]
+        m = (y2-y1)/(x2-x1)
+        b = y2-(m*x2)
+        xx,yy = np.cos(angp),np.sin(angp)
+        mm = yy/xx
+        xt = b/(mm-m)
+        yt = mm*xt 
+        fr = np.sqrt(xt*xt+yt*yt)/np.sqrt(x2*x2+y2*y2)
+        x,y = fr*np.cos(tmang),fr*np.sin(tmang)
+
+        self.x = np.vstack((self.x,x))
+        self.y = np.vstack((self.y,y))
+
+        F  = plt.figure()
+        ax = F.add_subplot(111)
+        ax.set_aspect('equal')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for i in range(int(self.n)+1):
+            ax.plot(self.x[i],self.y[i],'k-',lw=2)
+        ax.plot([x1,x2],[y1,y2],'go')
+        ax.plot([0,xt],[0,yt],'r--')
+        ax.plot(xt,yt,'ro')
+        plt.show()
+
+class FractalFlower(object):
+
+    def __init__(self,N=6,xs=0.,ys=0.,npoints=1000,rad=1.):
+
+        self.xs = xs
+        self.ys = ys
+        self.N = N
+        self.npoints = npoints
+        self.rad=rad
+        
+        cent = SimpleCircle(xc=xs,yc=ys,npoints=self.npoints,radius=self.rad)
+        self.angs = np.linspace(0,np.pi*2.,N+1)[:-1]
+        self.xc,self.yc = np.cos(self.angs),np.sin(self.angs)
+        self.layer = 0
+        self.values = {f'layer{self.layer}':{'coords':np.vstack((rad*cent.x,rad*cent.y)),
+                                             'cents':np.array([self.xc,self.yc])}
+                      }
+        self.hi = np.max(rad*cent.x)
+
+    def add_layer(self):
+        
+        self.layer+=1
+        ext = 1./(2.*np.cos(self.angs[1]))
+        sc = self.rad*self.layer*ext
+        tx,ty = [],[]
+        for i,ang in enumerate(self.angs):
+            tx.append((self.rad*self.layer*self.xc[i])+self.xs)
+            ty.append((self.rad*self.layer*self.yc[i])+self.ys)
+
+            if self.layer > 1:
+                try:
+                    x1,x2 = (sc*self.xc[i])+self.xs,(sc*self.xc[i+1])+self.xs
+                    y1,y2 = (sc*self.yc[i])+self.ys,(sc*self.yc[i+1])+self.ys
+                    
+                except:
+                    x1,x2 = (sc*self.xc[i])+self.xs,(sc*self.xc[0])+self.xs
+                    y1,y2 = (sc*self.yc[i])+self.ys,(sc*self.yc[0])+self.ys
+                    
+                if np.abs(x2-x1) >= 1.e-6:
+                    tline = SimpleLine(x1,x2,y1,y2)
+                    xs = np.linspace(x1,x2,self.layer+1)[1:-1]
+                    ys = tline.get_y(xs)
+                else:
+                    xs = []
+                    for i in range(self.layer-1): xs.append(x1)
+                    ys = np.linspace(y2,y1,self.layer+1)[1:-1]
+                for j in range(len(xs)):
+                    tx.append(xs[j])
+                    ty.append(ys[j])
+        tmc = np.zeros((len(tx),2,self.npoints))
+        for i in range(len(tx)):
+            tcirc = SimpleCircle(xc=tx[i],yc=ty[i],npoints=self.npoints,radius=sc)
+            tmc[i] = np.vstack((tcirc.x,tcirc.y))
+            hi = np.max(tcirc.x)
+            if hi > self.hi: self.hi = hi
+
+        self.values[f'layer{self.layer}'] = {'coords':tmc}
+
+        
+        tx.append(tx[0])
+        ty.append(ty[0])
+        self.values[f'layer{self.layer}']['cents'] = np.vstack((tx,ty))
+
+    def tmp(self,ax,c='k',minlw=1,maxlw=6,ilo=0.1,ihi=25.,palette=[0]):
+
+        lfct = ilo/ihi
+        hfct = ihi/ilo
+        
+        ks = list(self.values.keys())
+        lws = np.linspace(minlw,maxlw,len(ks))
+        for i,k in enumerate(ks):
+            tmlw = lws[i]
+            tmd = self.values[k]['coords']
+            if len(palette) == 1:
+                tmc = np.random.choice(['crimson','orange','gold','darkgreen','dodgerblue','violet'])
+            else:
+                tmc = palette[np.random.randint(0,palette.shape[0])]
+            if k == 'layer0':
+                ax.plot(tmd[0],tmd[1],'-',c=tmc,lw=tmlw,alpha=.1)
+                ax.plot(tmd[0]*lfct,tmd[1]*lfct,'-',c=tmc,lw=tmlw,alpha=.2)
+                ax.plot(tmd[0]*hfct,tmd[1]*hfct,'-',c=tmc,lw=tmlw,alpha=.2)
+            else:
+                for i in range(tmd.shape[0]):
+                    ax.plot(tmd[i][0],tmd[i][1],'-',c=tmc,lw=tmlw,alpha=.1)
+                    ax.plot(tmd[i][0]*lfct,tmd[i][1]*lfct,'-',c=tmc,lw=tmlw,alpha=.2)
+                    ax.plot(tmd[i][0]*hfct,tmd[i][1]*hfct,'-',c=tmc,lw=tmlw,alpha=.2)
+        
+        
+
+if __name__ == '__main__':
+
+    sz=SpinZoomer()
+    for i in range(2): sz.add_one()
+    sz.tmp()
     

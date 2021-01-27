@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.transforms as trans
 import matplotlib as mpl
 import imageio
 import glob
@@ -7,9 +8,10 @@ import os
 from PIL import Image
 
 from art_objs import *
-from color_tools import *
+from utils.color_tools import *
 from iseeall import draw_eye
 
+plt.rcParams['axes.facecolor'] = 'black'
 class NewFlower(object):
 
     def __init__(self,N=6,xs=0.,ys=0.,npoints=1000,rad=1.):
@@ -88,14 +90,14 @@ class NewFlower(object):
             else:
                 tmc = palette[np.random.randint(0,palette.shape[0])]
             if k == 'layer0':
-                ax.plot(tmd[0],tmd[1],'-',c=tmc,lw=tmlw,alpha=.1)
-                ax.plot(tmd[0]*lfct,tmd[1]*lfct,'-',c=tmc,lw=tmlw,alpha=.1)
-                ax.plot(tmd[0]*hfct,tmd[1]*hfct,'-',c=tmc,lw=tmlw,alpha=.1)
+                ax.plot(tmd[0],tmd[1],'-',c=tmc,lw=tmlw,alpha=.3)
+                ax.plot(tmd[0]*lfct,tmd[1]*lfct,'-',c=tmc,lw=tmlw,alpha=.3)
+                ax.plot(tmd[0]*hfct,tmd[1]*hfct,'-',c=tmc,lw=tmlw,alpha=.3)
             else:
                 for i in range(tmd.shape[0]):
-                    ax.plot(tmd[i][0],tmd[i][1],'-',c=tmc,lw=tmlw,alpha=.1)
-                    ax.plot(tmd[i][0]*lfct,tmd[i][1]*lfct,'-',c=tmc,lw=tmlw,alpha=.1)
-                    ax.plot(tmd[i][0]*hfct,tmd[i][1]*hfct,'-',c=tmc,lw=tmlw,alpha=.1)
+                    ax.plot(tmd[i][0],tmd[i][1],'-',c=tmc,lw=tmlw,alpha=.3)
+                    ax.plot(tmd[i][0]*lfct,tmd[i][1]*lfct,'-',c=tmc,lw=tmlw,alpha=.3)
+                    ax.plot(tmd[i][0]*hfct,tmd[i][1]*hfct,'-',c=tmc,lw=tmlw,alpha=.3)
 
 class FlowerTest(PowerFlower):
 
@@ -137,76 +139,34 @@ class FlowerTest(PowerFlower):
                     except:
                         ax.fill_between(crc[0][t1[1:-1]],crc[1][t1[1:-1]],crc[1][t2],alpha=.3,color=color)
 
-"""
-F  = plt.figure()
-ax = F.add_subplot(111)
-ax.set_aspect('equal')
-ax.set_xticks([])
-ax.set_yticks([])
 
-angs = np.linspace(0,np.pi*2.,8)[:-1]
-xs = 9.*np.cos(angs)
-ys = 9.*np.sin(angs)
-rads = np.linspace(0.5,1.5,8)
-for j in range(len(xs)):
-    d = FlowerTest(N=j+3,xs=xs[j],ys=ys[j],rad=rads[j])
-    for i in range(2):
-        d.add_layer()
-
-    d.tmt(ax)
-    d.tmp(ax,c='w')
-    #d.pmt(ax,c='gray')
-plt.show()
-
-
-images = []
-for i in range(50):
-    F = plt.figure()
-    ax = F.add_subplot(111)
-    d = FlowerTest(N=6)
-    for i in range(3):
-        d.add_layer()
-    d.tmt(ax)
-    d.tmp(ax,c='w')
-    plt.savefig(f'tmp.png')
-    plt.close(F)
-    images.append(imageio.imread('tmp.png'))
-imageio.mimsave('test.gif', images)
-"""
-pim = np.asarray(Image.open('tmp/pastel.png'))
-if pim.shape[2] == 4:
-    bt = np.zeros((pim.shape[0],pim.shape[1],3))
-    bt[:,:,:] = pim[:,:,:-1]
-pim = np.copy(bt)
-
-insh = pim.reshape((pim.shape[0]*pim.shape[1],3))
-tst  = KmeansPalette(insh,K=16,xin=pim.shape[0],yin=pim.shape[1])
-for i in range(20):
-    tst.assign_points()
-    tst.move_centroids()
-palette = tst.centroids/255.
+tst=KmeansPalette('./palettes/dead.png',K=32)
+palette = tst.output_palette(iters=40)
+print(palette)
                         
-d=NewFlower(N=17)
+d=NewFlower(N=9)
 for i in range(23):
     d.add_layer()
 
     
-F=plt.figure(figsize=(5,5),dpi=100)
+F=plt.figure(figsize=(5,5),dpi=110)
 ax=F.add_subplot(111)
-lo,hi = .05,d.hi
-d.tmp(ax,minlw=2,maxlw=4,ilo=lo,ihi=hi,palette=palette)
+lo,hi = .08,d.hi
+d.tmp(ax,minlw=1,maxlw=1.8,ilo=lo,ihi=hi,palette=palette)
 ax.set_aspect('equal')
 ax.set_xticks([])
 ax.set_yticks([])
-nframe = 75
+nframe = 85
 lms = np.linspace(np.log10(lo),np.log10(hi),nframe)
 lms = 10.**(lms)
 sml = np.flip(lms)
+bgc = sinuflashcolor(nframe,5,'maroon','firebrick',frate=5)
 images=[]
 for i in range(nframe-1):
     ax.set_xlim((-1.)*sml[i],sml[i])
     ax.set_ylim((-1.)*sml[i],sml[i])
+    ax.fill_between([(-1.)*sml[i],sml[i]],sml[i],(-1.)*sml[i],color=bgc[i],zorder=i-nframe-10)
     plt.tight_layout()
     plt.savefig('./frame.png')
     images.append(imageio.imread('./frame.png'))
-imageio.mimsave('./test.gif',images)
+imageio.mimsave('./gallery/zoom_flower.gif',images)

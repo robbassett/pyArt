@@ -59,7 +59,7 @@ class KmeansPalette(object):
         for i in range(iters):
             self.assign_points()
             self.move_centroids()
-        return self.centroids.astype(int)
+        return self.centroids/255
 
     def display_palette(self):
         x = np.linspace(0,self.K,self.K)

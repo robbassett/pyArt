@@ -7,7 +7,7 @@ class SquareP(object):
 
     def __init__(self,cent,L=1.,rang=0.):
         h = L/2.
-        xs = (np.array([-1.,1.,1.,-1.-1.])*h)
+        xs = (np.array([-1.,1.,1.,-1.,-1.])*h)
         ys = (np.array([-1.,-1.,1.,1.,-1.])*h)
         
         rmat = np.array([
@@ -15,7 +15,8 @@ class SquareP(object):
             [np.sin(rang),np.cos(rang)]
         ])
 
-        vs = np.dot(np.vstack((xs,ys)).T,rmat).T
+        vs = np.vstack((xs,ys))
+        vs = np.dot(vs.T,rmat).T
         vs[0]+=cent[0]
         vs[1]+=cent[1]
         self.verts = []

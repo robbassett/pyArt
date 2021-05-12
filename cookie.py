@@ -6,7 +6,7 @@ from matplotlib.collections import PatchCollection
 
 plt.rcParams["font.family"] = "serif"
 
-def g2d(x,y,x0,y0,sig=0.05):
+def g2d(x,y,x0,y0,sig=0.04):
     return np.exp((-1.)*(((x-x0)*(x-x0))+((y-y0)*(y-y0)))/(2.*sig*sig))
 
 def border(mxr,n=50,fiddle=0.01):
@@ -60,7 +60,11 @@ def mnms(mxr,word='PYTHON',mr=.15):
     return xs,ys,c,list(l)
 
 def one_cookie(ax,wrd='PYTHON'):
-    sx,sy,sz = spiral(n=230,r=4,fiddle=.05)
+    n = np.random.randint(50,500)
+    r = np.random.randint(3,7)
+    f = np.random.uniform(.05,.1)
+    
+    sx,sy,sz = spiral(n=n,r=r,fiddle=f)
     mxr = max([sx.max(),sy.max()])
     bx,by1,by2,bt = border(mxr,n=35,fiddle=.015)
 

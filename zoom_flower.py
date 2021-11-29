@@ -142,7 +142,6 @@ class FlowerTest(PowerFlower):
 
 tst=KmeansPalette('./palettes/dead.png',K=32)
 palette = tst.output_palette(iters=40)
-print(palette)
                         
 d=NewFlower(N=9)
 for i in range(23):

@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
     tiles = [Dart([0,0],-1.2*np.pi/2,1)]
 
-    while len(tiles) < 20000:
+    while len(tiles) < 5000:
         tmt = []
         for t in tiles: tmt+=list(t.inflate())
         tiles = tmt

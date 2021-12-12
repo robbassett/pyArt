@@ -3,6 +3,7 @@ from matplotlib.path import Path
 import matplotlib.patches as patches
 import numpy as np
 import matplotlib as mpl
+import matplotlib.cm as cm
 
 def colorFader(c1,c2,mix=0): 
     c1=np.array(mpl.colors.to_rgb(c1))
@@ -133,19 +134,19 @@ class P3_base():
         self._make_path()
 
     def _make_path(self):
-        rmat = np.array([
+        self.rmat = np.array([
             [np.cos(self.angle),(-1.)*np.sin(self.angle)],
             [np.sin(self.angle),np.cos(self.angle)]
         ])
 
         vs = np.vstack((self.xs,self.ys))
-        vs = np.dot(vs.T,rmat).T
+        vs = np.dot(vs.T,self.rmat).T
         vs[0]+=self.point[0]
         vs[1]+=self.point[1]
         self.verts = [(vs[0][i],vs[1][i]) for i in range(len(self.xs))]
         self.centre = np.array(self.verts).mean(axis=0)
 
-        codes = [
+        self.codes = [
             Path.MOVETO,
             Path.LINETO,
             Path.LINETO,
@@ -153,7 +154,7 @@ class P3_base():
             Path.CLOSEPOLY,
         ]
 
-        self.path = Path(self.verts,codes)
+        self.path = Path(self.verts,self.codes)
 
 class P3_skinny(P3_base):
 
@@ -161,6 +162,7 @@ class P3_skinny(P3_base):
         self.type='P3skinny'
         a1 = 36.*np.pi/180.
         super().__init__(point,angle,l,a1,flip=flip)
+        self.add_stripes(self.L/8)
 
     def inflate(self):
         a2 = 72.*np.pi/180.
@@ -173,12 +175,43 @@ class P3_skinny(P3_base):
 
         return s1,s2,f1,f2
 
+    def add_stripes(self,h):
+        rmat = np.array([
+            [np.cos(self.angle-np.pi/2),(-1.)*np.sin(self.angle-np.pi/2)],
+            [np.sin(self.angle-np.pi/2),np.cos(self.angle-np.pi/2)]
+        ])
+        a1 = 72.*np.pi/180.
+        hp = h/np.sin(54.*np.pi/180)
+        dx = hp/np.tan(a1)
+        xs = [0,dx,self.L*np.cos(a1)-dx,dx,0]
+        ys = [0,hp,0,-hp,0]
+        vs = np.vstack((xs,ys))
+        vs = np.dot(vs.T,rmat).T
+        vs[0]+=self.verts[3][0]
+        vs[1]+=self.verts[3][1]
+        verts = [(vs[0][i],vs[1][i]) for i in range(len(xs))]
+        self.stripe1 = Path(verts,self.codes)
+
+        rmat = np.array([
+            [np.cos(self.angle+np.pi/2),(-1.)*np.sin(self.angle+np.pi/2)],
+            [np.sin(self.angle+np.pi/2),np.cos(self.angle+np.pi/2)]
+        ])
+        xs = [0,dx,self.L*np.cos(a1)-dx,dx,0]
+        ys = [0,hp,0,-hp,0]
+        vs = np.vstack((xs,ys))
+        vs = np.dot(vs.T,rmat).T
+        vs[0]+=self.verts[1][0]
+        vs[1]+=self.verts[1][1]
+        verts = [(vs[0][i],vs[1][i]) for i in range(len(xs))]
+        self.stripe2 = Path(verts,self.codes)
+
 class P3_fat(P3_base):
 
     def __init__(self,point,angle,l):
         self.type='P3fat'
         a1 = 72.*np.pi/180.
         super().__init__(point,angle,l,a1)
+        self.add_stripes(self.L/8)
         
     def inflate(self):
         a2 = 36.*np.pi/180.
@@ -191,6 +224,53 @@ class P3_fat(P3_base):
         s2 = P3_skinny(f1.verts[1],self.angle-3.5*a2,l,flip=True)
 
         return f1,f2,f3,s1,s2
+
+    def add_stripes(self,h):
+        rmat = np.array([
+            [np.cos(self.angle+np.pi/2),(-1.)*np.sin(self.angle+np.pi/2)],
+            [np.sin(self.angle+np.pi/2),np.cos(self.angle+np.pi/2)]
+        ])
+        a1 = 54.*np.pi/180.
+        dx = h/np.tan(a1)
+        xs = [0,dx,2*self.L*np.cos(a1)-dx,2.*self.L*np.cos(a1),0]
+        ys = [0,-h,-h,0,0]
+        vs = np.vstack((xs,ys))
+        vs = np.dot(vs.T,rmat).T
+        vs[0]+=self.verts[1][0]
+        vs[1]+=self.verts[1][1]
+        verts = [(vs[0][i],vs[1][i]) for i in range(len(xs))]
+        self.stripe1 = Path(verts,self.codes)
+
+        rmat = np.array([
+            [np.cos(self.angle-np.pi/2),(-1.)*np.sin(self.angle-np.pi/2)],
+            [np.sin(self.angle-np.pi/2),np.cos(self.angle-np.pi/2)]
+        ])
+        dx = h*np.tan(36*np.pi/180)
+        xs = [0,-dx,dx,0]
+        ys = [0,h,h,0]
+        vs = np.vstack((xs,ys))
+        vs = np.dot(vs.T,rmat).T
+        vs[0]+=self.verts[2][0]
+        vs[1]+=self.verts[2][1]
+        verts = [(vs[0][i],vs[1][i]) for i in range(len(xs))]
+        self.stripe2 = Path(verts,[Path.MOVETO,Path.LINETO,Path.LINETO,Path.CLOSEPOLY])
+
+    def split(self,frc=0.7):
+
+        y = self.verts[1][1] + frc*(self.verts[3][1]-self.verts[1][1])
+        x = self.verts[1][0] + frc*(self.verts[3][0]-self.verts[1][0])
+        
+        self.tris = []
+        v = [(x,y),self.verts[0],self.verts[1],(x,y)]
+        self.tris.append(Path(v,[Path.MOVETO,Path.LINETO,Path.LINETO,Path.CLOSEPOLY]))
+        v = [(x,y),self.verts[1],self.verts[2],(x,y)]
+        self.tris.append(Path(v,[Path.MOVETO,Path.LINETO,Path.LINETO,Path.CLOSEPOLY]))
+        v = [(x,y),self.verts[2],self.verts[3],self.verts[4],(x,y)]
+        self.tris.append(Path(v,[Path.MOVETO,Path.LINETO,Path.LINETO,Path.LINETO,Path.CLOSEPOLY]))
+
+    def add_arcs(self,h):
+        pass
+
 
 if __name__ == '__main__':
     """
@@ -229,14 +309,15 @@ if __name__ == '__main__':
     """
 
     A = P3_fat([0,0],-np.pi/2,1)
-    tiles = A.inflate()
+    tiles = [A]
+    #tiles = A.inflate()
     F = plt.figure()
     ax = F.add_subplot(111)
-    p = patches.PathPatch(A.path)
-    ax.add_patch(p)
-    for t in tiles:
-        p = patches.PathPatch(t.path,fc='tab:blue')
-        ax.add_patch(p)
+    #p = patches.PathPatch(A.path)
+    #ax.add_patch(p)
+    #for t in tiles:
+    #    p = patches.PathPatch(t.path,fc='tab:blue')
+    #    ax.add_patch(p)
 
     #cs = ['r','g','b','m','gold']
     #for t,c in zip(tiles[::-1],cs):
@@ -252,9 +333,20 @@ if __name__ == '__main__':
         tiles = tmt
 
     for t in tiles:
-        c = 'grey' if t.type == 'P3skinny' else 'tab:blue'
-        p = patches.PathPatch(t.path,fc=c)
+        c = 'tab:red' if t.type == 'P3skinny' else 'tab:blue'
+        ec = 'firebrick' if t.type == 'P3skinny' else 'dodgerblue'
+        p = patches.PathPatch(t.path,fc=c,ec='None')
         ax.add_patch(p)
+        if t.type == 'P3fat':
+            t.split()
+            for tt,tc in zip(t.tris,['dodgerblue','skyblue','tab:blue']):
+                p = patches.PathPatch(tt,fc=tc,ec='None')
+                ax.add_patch(p)
+        p = patches.PathPatch(t.stripe2,fc='w',ec='None')
+        ax.add_patch(p)
+        p = patches.PathPatch(t.stripe1,fc='gold',ec='None')
+        ax.add_patch(p)
+    
 
     ax.set_ylim(-.2,2.)
     ax.set_xlim(-1.2,1.2)

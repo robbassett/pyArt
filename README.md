@@ -2,7 +2,7 @@
 Exploration of creative coding. All artworks created primarily with numpy, scipy, imageio, PIL, and matplotlib.
 
 <p align="center">
-<img src="gallery/c.png" width="250" class="center"> <img src="gallery/tra2.png" width="250" class="center"> 
+<img src="gallery/c.png" height="500" class="center"> <img src="gallery/tra2.png" height="250" class="center"> 
 </p>
 
 <p align="center">
